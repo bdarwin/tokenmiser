@@ -1,0 +1,11 @@
+{
+  "name": "tokenmiser",
+  "description": "Save tokens in Claude Code: compresses noisy Bash output, blocks wasteful whole-file reads, nudges terse habits, adds a Haiku scout agent.",
+  "version": "0.1.0",
+  "author": { "name": "bdarwin" },
+  "homepage": "https://github.com/bdarwin/tokenmiser",
+  "repository": "https://github.com/bdarwin/tokenmiser",
+  "license": "MIT",
+  "keywords": ["tokens", "cost", "context", "compression"],
+  "agents": ["./claude-agents/scout.md"]
+}

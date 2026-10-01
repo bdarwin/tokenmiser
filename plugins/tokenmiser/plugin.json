@@ -1,0 +1,13 @@
+{
+  "name": "tokenmiser",
+  "description": "Save AI credits in Copilot CLI: compresses noisy shell/search output before the model sees it, blocks wasteful whole-file reads, nudges the agent into terse habits, and adds a cheap-model scout agent.",
+  "version": "0.1.0",
+  "author": { "name": "bdarwin" },
+  "homepage": "https://github.com/bdarwin/tokenmiser",
+  "repository": "https://github.com/bdarwin/tokenmiser",
+  "license": "MIT",
+  "keywords": ["tokens", "credits", "cost", "context", "compression", "copilot-cli"],
+  "agents": "copilot-agents/",
+  "skills": ["skills/"],
+  "hooks": "hooks/copilot-hooks.json"
+}

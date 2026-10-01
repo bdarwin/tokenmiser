@@ -1,0 +1,15 @@
+{
+  "name": "tokenmiser",
+  "description": "Credit-saving plugins for coding agents",
+  "owner": {
+    "name": "bdarwin"
+  },
+  "plugins": [
+    {
+      "name": "tokenmiser",
+      "source": "./plugins/tokenmiser",
+      "description": "Save tokens in Claude Code: output compression, big-read guard, frugal prompt, Haiku scout agent.",
+      "version": "0.1.0"
+    }
+  ]
+}
