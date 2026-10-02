@@ -13,6 +13,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1] : d);
@@ -20,10 +21,10 @@ const repo = path.resolve(argv[0] ?? '.');
 const reps = Number(opt('reps', 3));
 const jobs = Number(opt('jobs', 2));
 const model = opt('model', null);
-const out = opt('out', new URL('./copilot-results.json', import.meta.url).pathname);
+const out = opt('out', fileURLToPath(new URL('./copilot-results.json', import.meta.url)));
 const bin = opt('copilot', 'copilot');
-const plugin = new URL('../plugins/tokenmiser', import.meta.url).pathname;
-const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', new URL('./tasks-flask.json', import.meta.url).pathname)), 'utf8'));
+const plugin = fileURLToPath(new URL('../plugins/tokenmiser', import.meta.url));
+const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', fileURLToPath(new URL('./tasks-flask.json', import.meta.url)))), 'utf8'));
 // If tokenmiser is already installed in Copilot, use that copy (loading it twice would
 // run every hook twice); "none" then switches it off with TOKENMISER_DISABLE.
 let installed = false;

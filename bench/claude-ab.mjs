@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1] : d);
@@ -13,9 +14,9 @@ const repo = path.resolve(argv[0] ?? '.');
 const reps = Number(opt('reps', 2));
 const model = opt('model', 'haiku');
 const jobs = Number(opt('jobs', 3));
-const out = opt('out', new URL('./results.json', import.meta.url).pathname);
-const plugin = new URL('../plugins/tokenmiser', import.meta.url).pathname;
-const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', new URL('./tasks-flask.json', import.meta.url).pathname)), 'utf8'));
+const out = opt('out', fileURLToPath(new URL('./results.json', import.meta.url)));
+const plugin = fileURLToPath(new URL('../plugins/tokenmiser', import.meta.url));
+const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', fileURLToPath(new URL('./tasks-flask.json', import.meta.url)))), 'utf8'));
 const SETUPS = {
   none: { plugin: false, env: {} },
   plugin: { plugin: true, env: { TOKENMISER_INDEX: '0' } },

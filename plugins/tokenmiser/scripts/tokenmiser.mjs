@@ -9,6 +9,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { normalize, respond } from './lib/adapters.mjs';
 import { compress, estimateTokens } from './lib/compress.mjs';
 import { homeDir, loadConfig } from './lib/config.mjs';
@@ -58,7 +59,7 @@ function runHook(event) {
       tm = ensureShim(repoRoot(call.cwd), call.cwd);
       // Warm the index in the background so the first query is instant.
       try {
-        spawn(process.execPath, [new URL(import.meta.url).pathname, 'index', '--quiet'], { cwd: call.cwd, detached: true, stdio: 'ignore' }).unref();
+        spawn(process.execPath, [fileURLToPath(import.meta.url), 'index', '--quiet'], { cwd: call.cwd, detached: true, stdio: 'ignore' }).unref();
       } catch {}
     }
     if (cfg.frugalPrompt) emit(r.context(frugalPrompt({ agent, tm })));

@@ -12,6 +12,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1] : d);
@@ -21,9 +22,9 @@ const reps = Number(opt('reps', 2));
 const jobs = Number(opt('jobs', 2));
 const model = opt('model', null);
 const bin = opt('copilot', 'copilot');
-const out = opt('out', new URL('./copilot-code-results.json', import.meta.url).pathname);
-const plugin = new URL('../plugins/tokenmiser', import.meta.url).pathname;
-const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', new URL('./code-tasks-flask.json', import.meta.url).pathname)), 'utf8'));
+const out = opt('out', fileURLToPath(new URL('./copilot-code-results.json', import.meta.url)));
+const plugin = fileURLToPath(new URL('../plugins/tokenmiser', import.meta.url));
+const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', fileURLToPath(new URL('./code-tasks-flask.json', import.meta.url)))), 'utf8'));
 const testCmd = `PYTHONPATH=src ${py} -m pytest`;
 const PROMPT = `Some tests in this repository fail. Find the bug in src/ and fix it. Do not modify anything under tests/. Run the tests with: \`${testCmd}\` (add any pytest options you like). You are done when the whole suite passes. Be concise.`;
 

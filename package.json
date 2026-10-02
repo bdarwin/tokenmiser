@@ -10,7 +10,7 @@
     "plugins/tokenmiser/scripts"
   ],
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

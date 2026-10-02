@@ -396,7 +396,7 @@ export function refs(root, name, { maxSnippets = 12, maxFiles = 40 } = {}) {
     if (e.status === 1) raw = '';
     else {
       try {
-        raw = execFileSync('git', ['grep', '-n', '-w', '-F', name], opts);
+        raw = execFileSync('git', ['grep', '--untracked', '-n', '-w', '-F', name, '--', '.', ':!.tokenmiser'], opts);
       } catch (e2) {
         raw = e2.stdout ?? '';
       }

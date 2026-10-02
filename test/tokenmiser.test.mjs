@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { normalize } from '../plugins/tokenmiser/scripts/lib/adapters.mjs';
 import { compress } from '../plugins/tokenmiser/scripts/lib/compress.mjs';
@@ -10,7 +11,7 @@ import { DEFAULTS } from '../plugins/tokenmiser/scripts/lib/config.mjs';
 import { digestSavedOutput } from '../plugins/tokenmiser/scripts/lib/digest.mjs';
 import { inspect } from '../plugins/tokenmiser/scripts/lib/guard.mjs';
 
-const CLI = new URL('../plugins/tokenmiser/scripts/tokenmiser.mjs', import.meta.url).pathname;
+const CLI = fileURLToPath(new URL('../plugins/tokenmiser/scripts/tokenmiser.mjs', import.meta.url));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tm-test-'));
 
 function hook(event, payload, agent = 'copilot', env = {}) {

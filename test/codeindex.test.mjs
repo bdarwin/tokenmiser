@@ -3,12 +3,13 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { extractSymbols, findSymbol, loadIndex, outline, refs, repoMap } from '../plugins/tokenmiser/scripts/lib/codeindex.mjs';
 import { DEFAULTS } from '../plugins/tokenmiser/scripts/lib/config.mjs';
 import { inspect } from '../plugins/tokenmiser/scripts/lib/guard.mjs';
 
-const CLI = new URL('../plugins/tokenmiser/scripts/tokenmiser.mjs', import.meta.url).pathname;
+const CLI = fileURLToPath(new URL('../plugins/tokenmiser/scripts/tokenmiser.mjs', import.meta.url));
 const names = (text, lang) => extractSymbols(text, lang).map((s) => `${s.name}@${s.line}-${s.end}`);
 
 test('js/ts: classes, methods, functions, arrows, types', () => {
@@ -113,7 +114,11 @@ test('CLI: with index on, session start creates the tm shim and advertises it (o
   const ctx = JSON.parse(r.stdout).additionalContext;
   assert.match(ctx, /`\.tokenmiser\/tm sym X`/);
   assert.match(ctx, /built-in "explore" agent/);
-  const out = execFileSync(path.join(root, '.tokenmiser', 'tm'), ['sym', 'money'], { cwd: root, encoding: 'utf8' });
+  // The tm shim is a shell script; on Windows the agent gets tm.cmd, so call the CLI directly here.
+  const out =
+    process.platform === 'win32'
+      ? execFileSync('node', [CLI, 'sym', 'money'], { cwd: root, encoding: 'utf8' })
+      : execFileSync(path.join(root, '.tokenmiser', 'tm'), ['sym', 'money'], { cwd: root, encoding: 'utf8' });
   assert.match(out, /^src\/money\.ts:1-3  export function money/);
   const off = spawnSync('node', [CLI, 'hook', 'session-start'], { input: JSON.stringify({ cwd: root }), encoding: 'utf8', env: { ...process.env, TOKENMISER_HOME: home } });
   assert.doesNotMatch(JSON.parse(off.stdout).additionalContext, /Code index/);

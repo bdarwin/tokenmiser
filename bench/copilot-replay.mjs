@@ -14,13 +14,14 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1] : d);
 const repo = path.resolve(argv[0] ?? '.');
-const script = JSON.parse(fs.readFileSync(path.resolve(opt('script', new URL('./replay-flask.json', import.meta.url).pathname)), 'utf8').replaceAll('{repo}', repo));
+const script = JSON.parse(fs.readFileSync(path.resolve(opt('script', fileURLToPath(new URL('./replay-flask.json', import.meta.url)))), 'utf8').replaceAll('{repo}', repo));
 const bin = opt('copilot', 'copilot');
-const plugin = new URL('../plugins/tokenmiser', import.meta.url).pathname;
+const plugin = fileURLToPath(new URL('../plugins/tokenmiser', import.meta.url));
 
 // Each setup's call sequence: every step, then that setup's follow-up calls for it.
 function plan(setup) {
