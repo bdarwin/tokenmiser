@@ -1,0 +1,7 @@
+[
+  { "id": "kubelet_sync_loop", "q": "In the kubelet, which function handles one iteration of the main sync loop (reading from the config, PLEG and sync channels)? Give file:line.", "expect": "syncLoopIteration" },
+  { "id": "scheduler_scoring", "q": "In the scheduler, which function scores the feasible nodes for a pod by running the score plugins? Give file:line.", "expect": "prioritizeNodes" },
+  { "id": "deployment_rolling", "q": "Where does the Deployment controller implement the rolling update strategy? Name the function with file:line.", "expect": "rolloutRolling" },
+  { "id": "kubeproxy_iptables", "q": "In kube-proxy's iptables mode, which function rebuilds and applies all the rules? Give file:line.", "expect": "syncProxyRules" },
+  { "id": "kubelet_eviction", "q": "In the kubelet eviction manager, which function is the body of the main loop that checks thresholds and evicts pods? Give file:line.", "expect": "synchronize" }
+]

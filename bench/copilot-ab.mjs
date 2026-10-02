@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A/B benchmark for GitHub Copilot CLI: same questions with and without tokenmiser.
 //
-//   node bench/copilot-ab.mjs <repo-dir> [--tasks bench/tasks-flask.json] [--reps 3] [--jobs 2] [--model <id>] [--out bench/copilot-results.json]
+//   node bench/copilot-ab.mjs <repo-dir> [--tasks bench/tasks-flask.json] [--reps 3] [--jobs 2] [--model <id>] [--with-index] [--out bench/copilot-results.json]
 //
 // Works with a Copilot login (any plan that includes Copilot CLI) or with no
 // subscription at all via BYOK, e.g. your own API key or a local model:
@@ -32,7 +32,9 @@ try {
 } catch {}
 const SETUPS = {
   none: { args: [], env: { TOKENMISER_DISABLE: '1' } },
-  plugin: { args: installed ? [] : ['--plugin-dir', plugin], env: {} },
+  plugin: { args: installed ? [] : ['--plugin-dir', plugin], env: { TOKENMISER_INDEX: '0' } },
+  // --with-index adds a third setup that advertises the code-index commands to the agent
+  ...(argv.includes('--with-index') ? { 'plugin+index': { args: installed ? [] : ['--plugin-dir', plugin], env: { TOKENMISER_INDEX: '1' } } } : {}),
 };
 
 // "Tokens ↑ 96.2k (61k read, 17.4k written) • ↓ 1.2k (300 reasoning)" and "AI Credits 2.22 (6s)" -> numbers
@@ -84,12 +86,13 @@ function run(task, setup, rep) {
         task: task.id, setup, rep, exit: code,
         ok: [].concat(task.expect).some((e) => answer.includes(e)),
         toolCalls: (md.match(/^### `/gm) ?? []).length,
+        indexCalls: (md.match(/\.tokenmiser\/tm (sym|outline|refs|map)/g) ?? []).length,
         modelCalls: (md.match(/^### Copilot\s*$/gm) ?? []).length,
         ...tok,
         tm,
         answer: answer.slice(0, 600),
       };
-      process.stderr.write(`${setup.padEnd(7)} ${task.id.padEnd(22)} rep${rep} tools=${row.toolCalls} credits=${tok.credits || '-'} ${tok.raw || '(no token line)'} tm=${JSON.stringify(tm)} ${row.ok ? 'ok' : 'MISS'}\n`);
+      process.stderr.write(`${setup.padEnd(13)} ${task.id.padEnd(22)} rep${rep} tools=${row.toolCalls} tm-cmds=${row.indexCalls} credits=${tok.credits || '-'} ${tok.raw || '(no token line)'} tm=${JSON.stringify(tm)} ${row.ok ? 'ok' : 'MISS'}\n`);
       resolve(row);
     });
   });
@@ -108,11 +111,12 @@ const of = (s, k) => avg(rows.filter((x) => x.setup === s).map((x) => x[k] || 0)
 const hasCredits = rows.some((x) => x.credits > 0);
 const pct = (a, b) => (b ? `${((a / b - 1) * 100).toFixed(0)}%` : '');
 console.log(`\n${tasks.length} tasks × ${reps} reps, repo ${path.basename(repo)}${model ? `, model ${model}` : ''}${installed ? ' (using the installed plugin)' : ''}\n`);
-console.log(`setup    correct  tool calls  input tok  cache-read  cache-written  output tok${hasCredits ? '  AI credits' : ''}`);
+console.log(`setup         correct  tool calls  input tok  cache-read  cache-written  output tok${hasCredits ? '  AI credits' : ''}`);
 for (const s of Object.keys(SETUPS)) {
   const r = rows.filter((x) => x.setup === s);
   const n = (k) => Math.round(of(s, k)).toLocaleString();
-  console.log(`${s.padEnd(8)} ${`${r.filter((x) => x.ok).length}/${r.length}`.padEnd(8)} ${of(s, 'toolCalls').toFixed(1).padEnd(11)} ${n('input').padEnd(10)} ${n('cached').padEnd(11)} ${n('written').padEnd(14)} ${n('output').padEnd(10)}${hasCredits ? `  ${of(s, 'credits').toFixed(2)}` : ''}`);
+  console.log(`${s.padEnd(13)} ${`${r.filter((x) => x.ok).length}/${r.length}`.padEnd(8)} ${of(s, 'toolCalls').toFixed(1).padEnd(11)} ${n('input').padEnd(10)} ${n('cached').padEnd(11)} ${n('written').padEnd(14)} ${n('output').padEnd(10)}${hasCredits ? `  ${of(s, 'credits').toFixed(2)}` : ''}`);
 }
+for (const s of Object.keys(SETUPS).filter((k) => k !== 'none' && k !== 'plugin')) console.log(`\n${s} vs none: input ${pct(of(s, 'input'), of('none', 'input'))}, tool calls ${pct(of(s, 'toolCalls'), of('none', 'toolCalls'))}${hasCredits ? `, AI credits ${pct(of(s, 'credits'), of('none', 'credits'))}` : ''}; used index commands in ${rows.filter((x) => x.setup === s && x.indexCalls).length}/${rows.filter((x) => x.setup === s).length} runs`);
 console.log(`\nplugin vs none: input ${pct(of('plugin', 'input'), of('none', 'input'))}, tool calls ${pct(of('plugin', 'toolCalls'), of('none', 'toolCalls'))}${hasCredits ? `, AI credits ${pct(of('plugin', 'credits'), of('none', 'credits'))}` : ''}`);
 console.log(`\nRaw rows: ${out}`);

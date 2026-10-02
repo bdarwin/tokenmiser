@@ -70,7 +70,7 @@ Copilot CLI (1.0.90) already does some of this. tokenmiser fills the gaps and st
 | **Search annotations** | `postToolUse` | Search hits get a short note naming the definition each hit sits in and its exact range. |
 | **Data-file hints** | `preToolUse` | Big CSV/JSON/Parquet reads are redirected to a query: DuckDB when installed, `head`/`wc`/`jq` otherwise. |
 | **Frugal prompt** | `sessionStart` | ~150 tokens of working rules: answer tersely, locate before reading, batch shell steps, use quiet flags, make focused edits. |
-| **Code index** | CLI (opt-in for agents) | `tokenmiser sym <name>`, `outline <file>`, `refs <name>`, `map [dir]`: definitions with line ranges and enclosing class, from a zero-dependency incremental index (`.tokenmiser/index.json`; Django's 3,000 files in 0.7 s). The annotations, snapping and outlines use the same parser. |
+| **Code index** | CLI (opt-in for agents) | `tokenmiser sym <name>`, `outline <file>`, `refs <name>`, `map [dir]`: definitions with line ranges and enclosing class, from a zero-dependency incremental index (`.tokenmiser/index.json`; Kubernetes' 13,800 source files in 2.3 s). The annotations, snapping and outlines use the same parser. |
 | **`scout` agent** (Claude Code only) | – | Codebase explorer on Haiku that answers with `file:line` pointers. Copilot already has its own `explore` agent. |
 | **`frugal-coding` skill** | – | A longer playbook (quiet flags per tool, data files, session hygiene) that loads only when relevant. |
 | **`tokenmiser` CLI** | – | `stats` shows what was saved, `compress` filters any pipe, `doctor` checks your setup and lists Copilot settings that save credits. |
@@ -230,7 +230,7 @@ Settings are layered: defaults < `~/.tokenmiser/config.json` < `<repo>/.tokenmis
 }
 ```
 
-`"index": true` also creates `.tokenmiser/tm` and tells the agent about the code-index commands. In the benchmark this was the most accurate setup but not cheaper, so it is off by default.
+`"index": true` also creates `.tokenmiser/tm` and tells the agent about the code-index commands. In the benchmarks this made the agent more direct (57% fewer tool calls on Kubernetes) but not cheaper in AI credits, so it is off by default.
 
 | Env var | Effect |
 |---|---|

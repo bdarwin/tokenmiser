@@ -29,6 +29,20 @@ Plugin vs none: input −18%, AI credits −14%. Small sample (10 runs per setup
 
 With 0.2.1 the same benchmark showed no difference (2.42 credits for both setups over 15 runs each): the live agent and its `explore` sub-agent used `grep_search`, `file_search` and `read_file`, which that version's hooks didn't match. The harness now logs what tokenmiser did in every run (`tm={...}`), which is how this was caught.
 
+## Does the code index pay off on a large monorepo? (Kubernetes, 13,829 source files)
+
+`node bench/copilot-ab.mjs /tmp/kubernetes --tasks bench/tasks-kubernetes.json --reps 2 --jobs 3 --with-index --model claude-haiku-4.5`
+
+| setup | correct | tool calls | input tok | output tok | AI credits | vs none |
+|---|---|---|---|---|---|---|
+| none | 8/10 | 11.8 | 113,290 | 1,302 | 2.35 | |
+| tokenmiser | 8/10 | 13.0 | 104,980 | 1,272 | 2.20 | −6% credits |
+| tokenmiser + index prompt | 8/10 | 5.1 | 96,940 | 857 | 2.41 | +3% credits |
+
+With the index advertised, the agent used the `tm` commands in 6 of 10 runs, made 57% fewer tool calls and read 14% fewer input tokens, but AI credits did not go down. Credits don't track the reported token line one-to-one here (Copilot's cheaper `explore` sub-agent does much of the searching in the other setups), and 10 runs per setup is a small sample. Conclusion: the index makes the agent more direct, not cheaper, so it stays opt-in.
+
+The index itself is not a bottleneck at this size: 13,829 files and 141,846 symbols index in 2.3 s (21.6 MB JSON), and a lookup takes about 0.5 s.
+
 ## Copilot CLI replay (2026-10-02, Copilot CLI 1.0.90)
 
 | Step | Without tokenmiser | With tokenmiser |
