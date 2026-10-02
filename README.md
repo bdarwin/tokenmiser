@@ -179,11 +179,40 @@ Restart Copilot CLI and use `/env` to check the hooks are loaded.
 
 In Claude Code, Bash output is compressed, Grep/Bash searches are annotated, and `Read`/`Bash` reads are guarded and snapped. The `tokenmiser:scout` agent is available too.
 
-### The CLI (optional)
+### The `tokenmiser` command (optional)
+
+The plugin works without it. Install it if you want `tokenmiser stats`, `doctor` and the code-lookup commands in your terminal:
 
 ```bash
-npx github:bdarwin/tokenmiser stats       # or: node <plugin>/scripts/tokenmiser.mjs stats
-npm test 2>&1 | npx github:bdarwin/tokenmiser compress
+npm install -g github:bdarwin/tokenmiser
+```
+
+## Using it
+
+There is nothing to operate. Use Copilot CLI (or Claude Code) as you normally do; tokenmiser works in the background on every tool call.
+
+**Check it's active.** In Copilot CLI, type `/env`: tokenmiser's hooks should be listed. After a session, `tokenmiser stats` shows what it did.
+
+**What you'll notice**
+
+- Long command output arrives shortened, ending with a line like `[tokenmiser: 499 of 585 lines omitted; full output: <path>]`. The agent can open that file if it needs the rest.
+- The first whole read of a big file is blocked and the agent gets the file's outline instead. If it repeats the same read, it goes through.
+- Search results end with a short `[tokenmiser] enclosing definitions` note.
+- A `.tokenmiser/` folder appears in the project. It holds the saved full outputs (newest 40) and ignores itself in git. Those files contain whatever your commands printed, so treat them like logs.
+
+**Measure it on your own work.** Run a similar task with and without the plugin and compare the `AI Credits` line Copilot prints at the end (or `/usage` inside a session):
+
+```bash
+TOKENMISER_DISABLE=1 copilot      # one session with tokenmiser switched off
+```
+
+**Turn features off or tune them.** Use the settings in [Configure](#configure), for example `{"guard": false}` in a project's `.tokenmiser.json` to stop the big-file blocking there.
+
+**Update or remove**
+
+```bash
+copilot plugin marketplace update tokenmiser && copilot plugin update tokenmiser@tokenmiser
+copilot plugin uninstall tokenmiser@tokenmiser
 ```
 
 ## Code index
