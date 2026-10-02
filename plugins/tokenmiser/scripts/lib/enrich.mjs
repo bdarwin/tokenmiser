@@ -75,7 +75,7 @@ export function enrichSearch(text, { cwd = process.cwd(), command = '' } = {}) {
       add(path.relative(cwd, m[1]).startsWith('..') ? m[1] : path.relative(cwd, m[1]), +m[2]);
       continue;
     }
-    m = raw.match(/^(?:\.\/)?([^\s:][^:\n]*?\.[A-Za-z0-9]+)[:-](\d+)[:-]/);
+    m = raw.match(/^(?:\.\/)?((?:[A-Za-z]:)?[^\s:][^:\n]*?\.[A-Za-z0-9]+)[:-](\d+)[:-]/);
     if (m) {
       add(resolve(m[1]), +m[2]);
       continue;
@@ -87,7 +87,7 @@ export function enrichSearch(text, { cwd = process.cwd(), command = '' } = {}) {
     }
     // "path:matched text" with no line number (Copilot's grep tool): find where that
     // text sits in the file, so the agent doesn't spend calls hunting for the line.
-    m = raw.match(/^(?:\.\/)?([^\s:][^:\n]*?\.[A-Za-z0-9]+):\s*(.*?\S)(?:\s+\[×\d+\])?\s*$/);
+    m = raw.match(/^(?:\.\/)?((?:[A-Za-z]:)?[^\s:][^:\n]*?\.[A-Za-z0-9]+):\s*(.*?\S)(?:\s+\[×\d+\])?\s*$/);
     if (m && located < 12) {
       const file = resolve(path.isAbsolute(m[1]) && !path.relative(cwd, m[1]).startsWith('..') ? path.relative(cwd, m[1]) : m[1]);
       const want = m[2].trim();
@@ -118,7 +118,7 @@ export function enrichSearch(text, { cwd = process.cwd(), command = '' } = {}) {
     }
     for (const [s, lns] of bySym) {
       const at = lns.length > 4 ? `L${lns.slice(0, 4).join(',L')},…` : `L${lns.join(',L')}`;
-      out.push(`${file}: ${at} in ${s.qname ?? s.name} (L${s.line}-${s.end})`);
+      out.push(`${file.replace(/\\/g, '/')}: ${at} in ${s.qname ?? s.name} (L${s.line}-${s.end})`);
     }
   }
   if (!out.length) return null;

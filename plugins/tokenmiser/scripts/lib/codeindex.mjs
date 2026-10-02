@@ -170,7 +170,7 @@ export function repoRoot(cwd) {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
     try {
-      return fs.realpathSync(cwd);
+      return fs.realpathSync.native(cwd);
     } catch {
       return path.resolve(cwd);
     }
@@ -310,7 +310,7 @@ export function formatSymbols({ total, hits }, query) {
 export function outline(index, file, opts) {
   let abs = path.resolve(file);
   try {
-    abs = fs.realpathSync(abs); // index.root is a real path (see repoRoot)
+    abs = fs.realpathSync.native(abs); // index.root is a real path (see repoRoot)
   } catch {}
   const rel = path.relative(index.root, abs).replace(/\\/g, '/');
   const f = index.files[rel] ?? index.files[file];

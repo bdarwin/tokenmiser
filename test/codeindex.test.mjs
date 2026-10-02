@@ -112,7 +112,7 @@ test('CLI: with index on, session start creates the tm shim and advertises it (o
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'tm-home-'));
   const r = spawnSync('node', [CLI, 'hook', 'session-start', '--agent', 'copilot'], { input: JSON.stringify({ sessionId: 's', cwd: root }), encoding: 'utf8', env: { ...process.env, TOKENMISER_HOME: home, TOKENMISER_INDEX: '1' } });
   const ctx = JSON.parse(r.stdout).additionalContext;
-  assert.match(ctx, /`\.tokenmiser\/tm sym X`/);
+  assert.match(ctx, process.platform === 'win32' ? /`\.tokenmiser\\tm\.cmd sym X`/ : /`\.tokenmiser\/tm sym X`/);
   assert.match(ctx, /built-in "explore" agent/);
   // The tm shim is a shell script; on Windows the agent gets tm.cmd, so call the CLI directly here.
   const out =

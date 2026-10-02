@@ -21,13 +21,15 @@ export function ensureShim(root, cwd) {
     // symlink (macOS: /var -> /private/var, /tmp -> /private/tmp).
     const real = (d) => {
       try {
-        return fs.realpathSync(d);
+        return fs.realpathSync.native(d); // .native also expands Windows 8.3 short names (RUNNER~1)
       } catch {
         return d;
       }
     };
     const rel = path.relative(real(cwd), real(sh)).replace(/\\/g, '/');
-    return rel.startsWith('..') || path.isAbsolute(rel) ? sh : rel.startsWith('.') ? rel : `./${rel}`;
+    const cmd = rel.startsWith('..') || path.isAbsolute(rel) ? sh : rel.startsWith('.') ? rel : `./${rel}`;
+    // PowerShell/cmd can't run the shell script; point Windows agents at tm.cmd.
+    return process.platform === 'win32' ? `${cmd.replace(/\//g, '\\')}.cmd` : cmd;
   } catch {
     return null;
   }
