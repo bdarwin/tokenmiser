@@ -153,7 +153,9 @@ BYOK runs the real Copilot agent (same tools, prompts and hooks) and bills your 
 
 ## Status
 
-Early (0.2.x). Tested on Linux and macOS with Copilot CLI 1.0.90–1.0.91 and Claude Code 2.1. Windows is untested. Hooks fail open, so a Copilot update that changes tool names or output formats turns features off rather than breaking the agent; `tokenmiser stats` shows whether the hooks are doing anything.
+[![test](https://github.com/bdarwin/tokenmiser/actions/workflows/test.yml/badge.svg)](https://github.com/bdarwin/tokenmiser/actions/workflows/test.yml)
+
+Early (0.2.x). The test suite runs on Linux, macOS and Windows (Node 18 and 22). Live sessions have been run on Linux and macOS with Copilot CLI 1.0.90–1.0.91 and Claude Code 2.1; nobody has run it inside a live Copilot session on Windows yet. Hooks fail open, so a Copilot update that changes tool names or output formats turns features off rather than breaking the agent; `tokenmiser stats` shows whether the hooks are doing anything.
 
 ## Install
 
