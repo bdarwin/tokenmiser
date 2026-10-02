@@ -1,0 +1,7 @@
+[
+  { "id": "bulk_create", "q": "Where is QuerySet.bulk_create defined, and which helper method does it call to actually insert the rows? Give file:line for both.", "expect": "_batched_insert" },
+  { "id": "csrf_origin", "q": "Where does CsrfViewMiddleware check the Origin header, and which method does that check? Give file:line.", "expect": "_origin_verified" },
+  { "id": "slugify", "q": "Where is the slugify utility defined, and what does it do with non-ASCII characters by default? Give file:line.", "expect": "django/utils/text.py" },
+  { "id": "empty_page", "q": "Which Paginator method raises EmptyPage for an out-of-range page number? Give file:line.", "expect": "validate_number" },
+  { "id": "migrate_plan", "q": "In the migrate management command, where is the migration plan computed? Name the class and method with file:line.", "expect": "migration_plan" }
+]

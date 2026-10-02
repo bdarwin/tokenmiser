@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook session-start --agent claude || true", "timeout": 10 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Read|Bash", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook pre-tool --agent claude || true", "timeout": 10 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Bash|Grep", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent claude || true", "timeout": 10 }] }
+    ]
+  }
+}

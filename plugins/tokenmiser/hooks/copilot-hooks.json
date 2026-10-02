@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook session-start --agent copilot || true",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook session-start --agent copilot; exit 0",
+        "timeoutSec": 10
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "^(view|bash|powershell)$",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook pre-tool --agent copilot || true",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook pre-tool --agent copilot; exit 0",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": "^(bash|powershell|read_bash|read_powershell|grep|rg|glob|web_fetch)$",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent copilot || true",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent copilot; exit 0",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

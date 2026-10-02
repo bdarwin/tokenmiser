@@ -1,0 +1,29 @@
+{
+  "name": "tokenmiser",
+  "version": "0.2.0",
+  "description": "Save AI credits in GitHub Copilot CLI (and Claude Code): compress noisy tool output, block wasteful reads, keep the agent terse.",
+  "type": "module",
+  "bin": {
+    "tokenmiser": "plugins/tokenmiser/scripts/tokenmiser.mjs"
+  },
+  "files": [
+    "plugins/tokenmiser/scripts"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "copilot",
+    "copilot-cli",
+    "claude-code",
+    "tokens",
+    "credits",
+    "plugin"
+  ],
+  "repository": "github:bdarwin/tokenmiser",
+  "license": "MIT",
+  "author": "Darwin Baisa <bdarwin@gmail.com>"
+}

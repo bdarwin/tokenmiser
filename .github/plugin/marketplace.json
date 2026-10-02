@@ -1,0 +1,19 @@
+{
+  "name": "tokenmiser",
+  "metadata": {
+    "description": "Credit-saving plugins for coding agents",
+    "version": "0.2.0"
+  },
+  "owner": {
+    "name": "Darwin Baisa",
+    "email": "bdarwin@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "tokenmiser",
+      "source": "plugins/tokenmiser",
+      "description": "Save AI credits in Copilot CLI: output compression, big-read guard with outlines, code index, frugal prompt.",
+      "version": "0.2.0"
+    }
+  ]
+}
