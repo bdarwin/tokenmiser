@@ -1,4 +1,36 @@
-# Benchmark
+# Benchmarks
+
+Three harnesses:
+
+| Harness | Needs | Measures |
+|---|---|---|
+| `copilot-replay.mjs` | Copilot CLI only. No account or API key: it starts its own scripted model (BYOK mode) | What Copilot sends to the model for a fixed session ([`replay-flask.json`](replay-flask.json)), with and without tokenmiser |
+| `copilot-ab.mjs` | Copilot CLI with a Copilot login, or BYOK (your Anthropic/OpenAI/Azure key, or a local Ollama model) | A live Copilot agent: tool calls, input/cached/output tokens, correctness |
+| `claude-ab.mjs` | Claude Code | A live Claude Code agent: turns, tokens, cost, correctness |
+
+```bash
+node bench/copilot-replay.mjs /tmp/flask
+COPILOT_PROVIDER_TYPE=anthropic COPILOT_PROVIDER_BASE_URL=https://api.anthropic.com COPILOT_PROVIDER_API_KEY=sk-ant-… \
+  COPILOT_MODEL=claude-haiku-4-5 node bench/copilot-ab.mjs /tmp/flask --reps 3
+```
+
+The replay needs Flask's test environment (`python3 -m venv .venv && .venv/bin/pip install -e . pytest` inside the clone).
+
+## Copilot CLI replay (2026-10-02, Copilot CLI 1.0.90)
+
+| Step | Without tokenmiser | With tokenmiser |
+|---|---|---|
+| pytest -v (whole suite, 1 failure) | ~419 (2 calls) | ~1,057 |
+| pytest -v (one module) | ~109 | ~89 |
+| rg url_prefix (content) | ~358 | ~509 |
+| view blueprints.py L273-300 | ~1,084 (2 calls) | ~1,084 |
+| view app.py (whole, 64 KB) | ~629 (2 calls) | ~1,072 |
+| cat pyproject.toml | ~1,649 | ~1,649 |
+| **Total input incl. system prompt + tool definitions** | **~153k** (10 requests) | **~114k, −25%** (7 requests) |
+
+Follow-up calls (the "2 calls" cells) are modelled: they are the calls an agent needs to reach the same information when the first result came back incomplete. They are listed in the script and can be edited.
+
+## Claude Code live benchmark (`claude-ab.mjs`)
 
 `claude-ab.mjs` asks Claude Code (headless) the same code-navigation questions under three setups and records turns, tool calls, tokens and cost from the CLI's own usage report:
 

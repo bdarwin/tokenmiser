@@ -94,7 +94,10 @@ function runHook(event) {
     let text = null;
     let context = null;
 
-    if (cfg.compress && new RegExp(cfg.compressTools).test(call.tool)) {
+    // An explicit file dump (cat/head/tail/sed -n …) is a read: the agent wants those exact
+    // lines, so trimming it only forces a re-read. Big dumps are the read guard's job.
+    const isFileDump = isShell && /^\s*(cat|head|tail|nl|bat|type|Get-Content|sed\s+-n)\b[^|;&]*$/.test(command);
+    if (cfg.compress && !isFileDump && new RegExp(cfg.compressTools).test(call.tool)) {
       const digest = digestSavedOutput(call.resultText, cfg);
       if (digest) {
         text = digest.text;

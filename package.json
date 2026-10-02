@@ -1,6 +1,6 @@
 {
   "name": "tokenmiser",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Save AI credits in GitHub Copilot CLI (and Claude Code): compress noisy tool output, block wasteful reads, keep the agent terse.",
   "type": "module",
   "bin": {

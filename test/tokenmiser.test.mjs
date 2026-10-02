@@ -126,6 +126,7 @@ test('copilot hooks: session start, deny-once guard, post-tool compression', () 
   assert.match(post.modifiedResult.textResultForLlm, /AssertionError/);
 
   assert.equal(hook('post-tool', { sessionId: 'a', cwd: tmp, toolName: 'edit', toolResult: { textResultForLlm: testRun(300) } }), null, 'edit results untouched');
+  assert.equal(hook('post-tool', { sessionId: 'a', cwd: tmp, toolName: 'bash', toolArgs: '{"command":"cat src/app.py"}', toolResult: { textResultForLlm: testRun(300) } }), null, 'explicit file dumps untouched');
   assert.equal(hook('post-tool', { sessionId: 'a', cwd: tmp, toolName: 'bash', toolResult: { textResultForLlm: testRun(300) } }, 'copilot', { TOKENMISER_DISABLE: '1' }), null);
 });
 
@@ -151,4 +152,20 @@ test('stats reports savings', () => {
   assert.ok(s.compressions >= 2);
   assert.ok(s.readsBlocked >= 3);
   assert.ok(s.tokensSavedTotal > 1000);
+});
+
+test('passing-test lines are folded, failures kept', () => {
+  const out = [
+    'collected 6 items',
+    'tests/test_a.py::test_one PASSED                [ 16%]',
+    'tests/test_a.py::test_error_handling PASSED     [ 33%]',
+    'tests/test_a.py::test_three PASSED              [ 50%]',
+    'tests/test_a.py::test_four PASSED               [ 66%]',
+    'tests/test_b.py::test_five FAILED               [ 83%]',
+    'tests/test_b.py::test_six PASSED                [100%]',
+    '=== 1 failed, 5 passed ===',
+  ].join('\n');
+  const res = compress(out, { ...DEFAULTS, minSavings: 0 });
+  assert.match(res.text, /… 4 passing test lines …\ntests\/test_b\.py::test_five FAILED/);
+  assert.match(res.text, /test_six PASSED/, 'short runs are kept');
 });

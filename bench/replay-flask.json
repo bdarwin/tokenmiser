@@ -1,0 +1,97 @@
+{
+  "description": "A typical debug loop in Flask: run the suite, find the failure, look around the code, peek at a big file. followUps are the extra calls an agent needs to reach the same information when a result came back incomplete.",
+  "prepare": "printf 'def test_tm_demo():\\n    assert 1 + 1 == 3\\n' > tests/test_tm_demo.py",
+  "cleanup": "rm -f tests/test_tm_demo.py",
+  "steps": [
+    {
+      "label": "pytest -v (whole suite, 1 failure)",
+      "tool": "bash",
+      "args": {
+        "command": ".venv/bin/python -m pytest tests -v 2>&1",
+        "description": "run tests"
+      },
+      "followUps": {
+        "none": [
+          {
+            "tool": "bash",
+            "args": {
+              "command": "grep -n -E 'FAILED|Error|assert' {lastSpill} | head -40",
+              "description": "find the failure in the saved output"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "pytest -v (one module)",
+      "tool": "bash",
+      "args": {
+        "command": ".venv/bin/python -m pytest tests/test_basic.py -v 2>&1",
+        "description": "run one module"
+      }
+    },
+    {
+      "label": "rg url_prefix (content)",
+      "tool": "rg",
+      "args": {
+        "pattern": "url_prefix",
+        "paths": [
+          "src/flask/sansio"
+        ],
+        "output_mode": "content",
+        "-n": true
+      }
+    },
+    {
+      "label": "view blueprints.py L273-300",
+      "tool": "view",
+      "args": {
+        "path": "{repo}/src/flask/sansio/blueprints.py",
+        "view_range": [
+          273,
+          300
+        ]
+      },
+      "followUps": {
+        "none": [
+          {
+            "tool": "view",
+            "args": {
+              "path": "{repo}/src/flask/sansio/blueprints.py",
+              "view_range": [
+                301,
+                377
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "view app.py (whole, 64 KB)",
+      "tool": "view",
+      "args": {
+        "path": "{repo}/src/flask/app.py"
+      },
+      "followUps": {
+        "none": [
+          {
+            "tool": "bash",
+            "args": {
+              "command": "grep -n -E '^\\s*(def|class) ' src/flask/app.py",
+              "description": "orient in a file too big to view"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "cat pyproject.toml",
+      "tool": "bash",
+      "args": {
+        "command": "cat pyproject.toml",
+        "description": "read config"
+      }
+    }
+  ]
+}

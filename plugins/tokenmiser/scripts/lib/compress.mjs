@@ -16,6 +16,8 @@ const NOISE = [
   /^\s*(Compiling|Checking|Downloaded|Fresh) \S+ v\d/, // cargo
   /^\s*\d+ packages? are looking for funding/,
   /^\s*run `npm fund`/,
+  /^\s*[\^~]{3,}\s*$/, // Python 3.11+ traceback caret markers
+  /^(_ ){8,}_?\s*$/, // pytest frame separators
 ];
 
 const IMPORTANT = /\b(error|errors|fail(ed|ure|ing)?|fatal|panic|exception|traceback|assert(ion)?|warn(ing)?|denied|not found|undefined|cannot|unable|segmentation|expected|received|✗|✖|×)\b|^\s*(E|F)\s|^\s*at\s.+:\d+|:\d+:\d+/i;
@@ -51,12 +53,25 @@ function cleanLines(text) {
 
 // Collapse runs of identical lines, and runs of lines that differ only in numbers
 // ("test 1 passed", "test 2 passed", ...).
+// A passing-test line from common runners (pytest -v, jest/vitest, go test, cargo, mocha, rspec docs).
+const PASSING = /(\bPASSED\b|^\s*(PASS|ok)\b|^\s*--- PASS:|\.\.\. ok$|^\s*[✓✔√]\s)/;
+const FAILING = /\b(FAIL(ED|URE)?|ERROR|panicked)\b|[✗✖×]/;
+
 function dedupeRuns(lines, collapseSimilar) {
   const shape = (l) => l.replace(/\d+(\.\d+)?/g, '#');
   const out = [];
   let i = 0;
+  const passing = (l) => PASSING.test(l) && !FAILING.test(l);
   while (i < lines.length) {
-    let j = i + 1;
+    let j = i;
+    // Fold runs of passing tests; failures are what the agent needs.
+    while (collapseSimilar && j < lines.length && passing(lines[j])) j++;
+    if (j - i >= 4) {
+      out.push(`  … ${j - i} passing test lines …`);
+      i = j;
+      continue;
+    }
+    j = i + 1;
     while (j < lines.length && lines[j] === lines[i]) j++;
     if (j - i > 2) {
       out.push(`${lines[i]}  [×${j - i}]`);

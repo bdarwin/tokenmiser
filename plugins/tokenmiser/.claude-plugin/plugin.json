@@ -1,7 +1,7 @@
 {
   "name": "tokenmiser",
   "description": "Save tokens in Claude Code: compresses noisy Bash output, guards wasteful reads (with outlines), labels search hits with their definition's line range, snaps partial reads to whole definitions, adds a Haiku scout agent.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Darwin Baisa",
     "email": "bdarwin@gmail.com"
