@@ -10,7 +10,8 @@ tokenmiser is a plugin that sits between the agent and its tools. It shrinks wha
 
 | | Without tokenmiser | With tokenmiser |
 |---|---|---|
-| Copilot CLI, live agent on Flask ([benchmark](#copilot-cli-live-agent-benchmark)) | 2.36 AI credits per question, 8/10 correct | **2.03 (−14%)**, 10/10 correct |
+| Copilot CLI, live agent **fixing bugs** in Flask ([benchmark](#copilot-cli-live-agent-benchmark)) | 8.95 AI credits per fix, 10/10 fixed | **7.18 (−20%)**, 10/10 fixed |
+| Copilot CLI, live agent answering questions on Flask | 2.36 AI credits per question, 8/10 correct | **2.03 (−14%)**, 10/10 correct |
 | Copilot CLI, scripted debug session ([replay](#copilot-cli-replay-real-cli-scripted-model)) | ~153k input tokens, 9 tool calls | **~114k (−25%)**, 6 tool calls |
 | Claude Code, live agent on Flask ([benchmark](#claude-code-live-agent-benchmark)) | $0.0333 per question | **$0.0291 (−13%)**, 29/30 correct (vs 28/30) |
 | Claude Code, live agent on Django | $0.0313 per question | **$0.0267 (−15%)**, 30/30 correct (vs 30/30) |
@@ -48,7 +49,7 @@ Copilot CLI (1.0.90) already does some of this. tokenmiser fills the gaps and st
 
 | Situation | Copilot CLI on its own | With tokenmiser |
 |---|---|---|
-| pytest output under ~20 KB | Compacts it itself ("Shell output was automatically compacted") | Left alone |
+| pytest output under ~20 KB | Compacts it itself ("Shell output was automatically compacted") | Left exactly as Copilot produced it |
 | Other noisy output under ~20 KB (custom scripts, test runners Copilot doesn't recognise) | Passed through whole | Progress bars, ANSI codes, passing tests and repeats folded; errors, head and tail kept; full output saved to a file |
 | Any shell output over ~20 KB | 500-char preview + temp file; the agent digs with `rg`/`head`/`tail` | Digest of the full output with every error line, plus the temp-file path |
 | `view` of a file over ~20 KB | Refused with a generic hint | Refused with the file's **outline** (definitions and line ranges), so the next read is exact |
@@ -86,7 +87,16 @@ A real Copilot subscription, Copilot CLI 1.0.91 on macOS, model `claude-haiku-4.
 | none | 8/10 | 106,830 | 2.36 | |
 | tokenmiser 0.2.2 | 10/10 | 87,220 | 2.03 | **−18% input, −14% credits** |
 
-Ten runs per setup is a small sample, and single runs range from 1.5 to 3.9 credits, so read this as a direction, not a guarantee. An earlier round with 0.2.1 showed no saving at all, and the reason was instructive: with a real model, Copilot's agent and its built-in `explore` sub-agent mostly use tools named `grep_search`, `file_search` and `read_file`, which 0.2.1 didn't watch. 0.2.2 covers them.
+**Coding tasks.** One bug is planted in a fresh clone; the agent must find and fix it without touching the tests, and a run counts only if the whole suite (494 tests) passes afterwards. Five bugs, 10 runs per setup, tokenmiser 0.2.2:
+
+| Setup | Fixed | Tool calls | Avg input tokens | Avg AI credits | Avg time |
+|---|---|---|---|---|---|
+| none | 10/10 | 17.0 | 427,530 | 8.95 | 68 s |
+| tokenmiser | 10/10 | 13.6 | 333,810 | 7.18 | 58 s |
+
+That is **−20% AI credits, −22% input tokens, −20% tool calls**. One of the five tasks was *more* expensive with 0.2.2: the plugin was rewriting output Copilot had already compacted, which confused the agent into re-reading the raw log. 0.2.3 leaves Copilot's compacted output alone; on that task it then cost 8.28 credits against 10.59 without the plugin (2 runs each).
+
+**Question answering.** Ten runs per setup is a small sample, and single runs range from 1.5 to 3.9 credits, so read this as a direction, not a guarantee. An earlier round with 0.2.1 showed no saving at all, and the reason was instructive: with a real model, Copilot's agent and its built-in `explore` sub-agent mostly use tools named `grep_search`, `file_search` and `read_file`, which 0.2.1 didn't watch. 0.2.2 covers them.
 
 ### Copilot CLI replay (real CLI, scripted model)
 
@@ -125,7 +135,8 @@ Most of the saving is uncached input, which was about 40% lower. Telling the age
 |---|---|---|
 | [`bench/copilot-replay.mjs`](bench/copilot-replay.mjs) | Copilot CLI installed. **No account, no API key** (it starts its own scripted model through BYOK mode) | What Copilot sends to the model, with and without tokenmiser |
 | [`bench/copilot-ab.mjs`](bench/copilot-ab.mjs) | Copilot CLI plus **either** a Copilot login **or** your own model via BYOK: an Anthropic/OpenAI/Azure API key, or a free local model with Ollama | A live agent: tool calls, input/cached/output tokens, correctness |
-| [`bench/claude-ab.mjs`](bench/claude-ab.mjs) | Claude Code | The same, in Claude Code |
+| [`bench/copilot-code.mjs`](bench/copilot-code.mjs) | The same, plus a Python environment for the repo's tests | A live agent fixing planted bugs, verified by the test suite |
+| [`bench/claude-ab.mjs`](bench/claude-ab.mjs) | Claude Code | The question benchmark, in Claude Code |
 
 ```bash
 git clone --depth 1 https://github.com/pallets/flask /tmp/flask

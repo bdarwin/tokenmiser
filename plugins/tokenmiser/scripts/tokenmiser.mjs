@@ -97,7 +97,10 @@ function runHook(event) {
     // An explicit file dump (cat/head/tail/sed -n …) is a read: the agent wants those exact
     // lines, so trimming it only forces a re-read. Big dumps are the read guard's job.
     const isFileDump = isShell && /^\s*(cat|head|tail|nl|bat|type|Get-Content|sed\s+-n)\b[^|;&]*$/.test(command);
-    if (cfg.compress && !isFileDump && new RegExp(cfg.compressTools).test(call.tool)) {
+    // Copilot compacts some outputs itself (pytest, ...) into its own marker lines.
+    // Rewriting that summary only garbles it, so leave it exactly as it is.
+    const alreadyCompacted = /^Shell output was automatically compacted\b/.test(call.resultText);
+    if (cfg.compress && !isFileDump && !alreadyCompacted && new RegExp(cfg.compressTools).test(call.tool)) {
       const digest = digestSavedOutput(call.resultText, cfg);
       if (digest) {
         text = digest.text;

@@ -61,7 +61,8 @@ function dedupeRuns(lines, collapseSimilar) {
   const shape = (l) => l.replace(/\d+(\.\d+)?/g, '#');
   const out = [];
   let i = 0;
-  const passing = (l) => PASSING.test(l) && !FAILING.test(l);
+  // Bracketed lines are another tool's summary markers ("[pytest progress: omitted 12 PASSED ...]"), not test results.
+  const passing = (l) => PASSING.test(l) && !FAILING.test(l) && !/^\s*\[.*\]\s*$/.test(l);
   while (i < lines.length) {
     let j = i;
     // Fold runs of passing tests; failures are what the agent needs.

@@ -6,6 +6,7 @@ Three harnesses:
 |---|---|---|
 | `copilot-replay.mjs` | Copilot CLI only. No account or API key: it starts its own scripted model (BYOK mode) | What Copilot sends to the model for a fixed session ([`replay-flask.json`](replay-flask.json)), with and without tokenmiser |
 | `copilot-ab.mjs` | Copilot CLI with a Copilot login, or BYOK (your Anthropic/OpenAI/Azure key, or a local Ollama model) | A live Copilot agent: tool calls, input/cached/output tokens, correctness |
+| `copilot-code.mjs` | The same, plus a Python env for the repo's tests | A live Copilot agent fixing planted bugs, verified by the test suite |
 | `claude-ab.mjs` | Claude Code | A live Claude Code agent: turns, tokens, cost, correctness |
 
 ```bash
@@ -28,6 +29,25 @@ The replay needs Flask's test environment (`python3 -m venv .venv && .venv/bin/p
 Plugin vs none: input −18%, AI credits −14%. Small sample (10 runs per setup; single runs range 1.5–3.9 credits).
 
 With 0.2.1 the same benchmark showed no difference (2.42 credits for both setups over 15 runs each): the live agent and its `explore` sub-agent used `grep_search`, `file_search` and `read_file`, which that version's hooks didn't match. The harness now logs what tokenmiser did in every run (`tm={...}`), which is how this was caught.
+
+## Copilot CLI live agent, coding (2026-10-02, Copilot CLI 1.0.91, macOS, `claude-haiku-4.5`)
+
+`node bench/copilot-code.mjs /tmp/flask --py /tmp/venv/bin/python --reps 2 --jobs 2 --model claude-haiku-4.5`
+
+Each task in [`code-tasks-flask.json`](code-tasks-flask.json) plants one bug (a one-line change in `src/`) in a fresh clone. The agent is told only that some tests fail. A run is "fixed" when the whole suite passes afterwards and nothing under `tests/` changed.
+
+| setup | fixed | tool calls | input tok | output tok | AI credits | seconds |
+|---|---|---|---|---|---|---|
+| none | 10/10 | 17.0 | 427,530 | 4,740 | 8.95 | 68 |
+| tokenmiser 0.2.2 | 10/10 | 13.6 | 333,810 | 4,060 | 7.18 | 58 |
+
+Plugin vs none: AI credits −20%, input −22%, tool calls −20%, time −14%.
+
+Per task (credits per run, none | plugin): nested_prefix 10.43, 10.66 | 11.95, 13.91 · debug_flag 7.27, 4.70 | 3.00, 2.87 · session_refresh 9.65, 14.98 | 8.81, 5.08 · response_tuple 7.69, 8.20 | 4.56, 4.31 · methods_upper 8.55, 7.32 | 5.13, 12.22.
+
+`nested_prefix` was worse with the plugin in both runs. Cause: 0.2.2 folded the `PASSED` marker lines of output that Copilot had already compacted, the agent read that as "tests passed", and it re-read the raw log. 0.2.3 never rewrites Copilot-compacted output; re-running that task gave 8.28 credits with the plugin against 10.59 without (2 runs each).
+
+The environment needs the repo's test dependencies in a venv outside the clone (for Flask: `pip install werkzeug jinja2 itsdangerous click blinker asgiref python-dotenv flask pytest`).
 
 ## Does the code index pay off on a large monorepo? (Kubernetes, 13,829 source files)
 

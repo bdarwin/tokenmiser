@@ -1,7 +1,7 @@
 {
   "name": "tokenmiser",
   "description": "Save AI credits in Copilot CLI: compresses noisy shell/search output, blocks wasteful whole-file reads (handing over an outline instead), adds a code index the agent queries in one call, and nudges terse habits.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": {
     "name": "Darwin Baisa",
     "email": "bdarwin@gmail.com"

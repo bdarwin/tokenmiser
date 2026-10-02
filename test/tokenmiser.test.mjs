@@ -169,3 +169,20 @@ test('passing-test lines are folded, failures kept', () => {
   assert.match(res.text, /… 4 passing test lines …\ntests\/test_b\.py::test_five FAILED/);
   assert.match(res.text, /test_six PASSED/, 'short runs are kept');
 });
+
+test("Copilot's own compacted output is left untouched", () => {
+  const compacted = [
+    'Shell output was automatically compacted. Compacted output below. Original at /tmp/original-output-1.txt; only use if exact omitted lines are needed.',
+    '',
+    '[pytest session metadata: omitted 5 non-diagnostic line(s)]',
+    '[pytest progress: omitted 120 PASSED test result line(s)]',
+    '[pytest progress: omitted 130 PASSED test result line(s)]',
+    '[pytest progress: omitted 140 PASSED test result line(s)]',
+    '[pytest progress: omitted 98 PASSED test result line(s)]',
+    'FAILED tests/test_blueprints.py::test_nesting_url_prefixes - assert 404 == 200',
+    '<shellId: 0 completed with exit code 0>',
+  ].join('\n');
+  assert.equal(hook('post-tool', { sessionId: 'z', cwd: tmp, toolName: 'bash', toolArgs: '{"command":"pytest -v | tail -50"}', toolResult: { textResultForLlm: compacted } }), null);
+  // and the folding rule itself ignores bracketed marker lines
+  assert.doesNotMatch(compress(compacted.split('\n').slice(2).join('\n'), { ...DEFAULTS, minSavings: 0 }).text, /passing test lines/);
+});

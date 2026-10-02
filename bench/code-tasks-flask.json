@@ -1,0 +1,32 @@
+[
+  {
+    "id": "nested_prefix",
+    "file": "src/flask/sansio/blueprints.py",
+    "find": "state.url_prefix.rstrip(\"/\") + \"/\" + bp_url_prefix.lstrip(\"/\")",
+    "replace": "state.url_prefix.rstrip(\"/\") + bp_url_prefix.lstrip(\"/\")"
+  },
+  {
+    "id": "debug_flag",
+    "file": "src/flask/helpers.py",
+    "find": "not in {\"0\", \"false\", \"no\"}",
+    "replace": "not in {\"0\", \"false\"}"
+  },
+  {
+    "id": "session_refresh",
+    "file": "src/flask/sessions.py",
+    "find": "session.permanent and app.config[\"SESSION_REFRESH_EACH_REQUEST\"]",
+    "replace": "session.permanent or app.config[\"SESSION_REFRESH_EACH_REQUEST\"]"
+  },
+  {
+    "id": "response_tuple",
+    "file": "src/flask/app.py",
+    "find": "rv, status, headers = rv  # type: ignore[misc]",
+    "replace": "rv, headers, status = rv  # type: ignore[misc]"
+  },
+  {
+    "id": "methods_upper",
+    "file": "src/flask/sansio/app.py",
+    "find": "methods = {item.upper() for item in methods}",
+    "replace": "methods = {item.lower() for item in methods}"
+  }
+]

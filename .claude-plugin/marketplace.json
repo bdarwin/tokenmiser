@@ -10,7 +10,7 @@
       "name": "tokenmiser",
       "source": "./plugins/tokenmiser",
       "description": "Save tokens in Claude Code: output compression, big-read guard, frugal prompt, Haiku scout agent.",
-      "version": "0.2.2"
+      "version": "0.2.3"
     }
   ]
 }
