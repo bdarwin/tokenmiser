@@ -1,0 +1,34 @@
+[
+  {
+    "id": "add_url_rule",
+    "q": "In this repo, where is add_url_rule implemented for the Flask app object (not blueprints)? Give file:line, and say which HTTP methods a rule gets when none are passed.",
+    "expect": "sansio/app.py"
+  },
+  {
+    "id": "session_cookie",
+    "q": "Which class stores the session in a signed cookie, and which of its methods writes the cookie onto the response? Give file:line for both.",
+    "expect": "save_session"
+  },
+  {
+    "id": "flask_run_discovery",
+    "q": "When `flask run` is used without --app, how does Flask find the application object? Name the functions involved with file:line.",
+    "expect": [
+      "find_best_app",
+      "prepare_import",
+      "locate_app"
+    ]
+  },
+  {
+    "id": "got_request_exception",
+    "q": "List every place under src/ where the got_request_exception signal is sent, with file:line and the enclosing method.",
+    "expect": "handle_exception"
+  },
+  {
+    "id": "blueprint_prefix",
+    "q": "How does Flask combine a blueprint's own url_prefix with the url_prefix passed to register_blueprint? Point to the class and lines that do it.",
+    "expect": [
+      "BlueprintSetupState",
+      "Blueprint.register"
+    ]
+  }
+]

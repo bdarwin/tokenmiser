@@ -22,6 +22,7 @@ function resultText(r) {
     return err ? `${out}${out && !out.endsWith('\n') ? '\n' : ''}${err}` : out;
   }
   if (typeof r.output === 'string') return r.output;
+  if (typeof r.content === 'string') return r.content; // Claude Grep (content mode)
   if (typeof r.result === 'string') return r.result;
   return null;
 }
@@ -42,17 +43,26 @@ export function normalize(payload) {
 export const respond = {
   copilot: {
     deny: (reason) => ({ permissionDecision: 'deny', permissionDecisionReason: reason }),
-    replaceResult: (text, call) => ({ modifiedResult: { resultType: call?.resultType ?? 'success', textResultForLlm: text } }),
+    rewrite: (args) => ({ modifiedArgs: args }),
+    // post-tool: optional replacement text and/or extra context appended for the model
+    post: ({ text, context }, call) => ({
+      ...(text != null && { modifiedResult: { resultType: call?.resultType ?? 'success', textResultForLlm: text } }),
+      ...(context && { additionalContext: context }),
+    }),
     context: (text) => ({ additionalContext: text }),
   },
   claude: {
     deny: (reason) => ({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } }),
+    // No permissionDecision: the normal permission flow still applies to the rewritten call.
+    rewrite: (args) => ({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: args } }),
     // updatedToolOutput must match the tool's own output shape, or Claude Code discards it.
     // Bash returns { stdout, stderr, interrupted, ... }: compressed text goes in stdout.
-    replaceResult: (text, call) => {
+    post: ({ text, context }, call) => {
       const raw = call?.rawResult;
-      const updated = raw && typeof raw === 'object' && ('stdout' in raw || 'stderr' in raw) ? { ...raw, stdout: text, stderr: '' } : text;
-      return { hookSpecificOutput: { hookEventName: 'PostToolUse', updatedToolOutput: updated } };
+      const out = { hookEventName: 'PostToolUse' };
+      if (text != null) out.updatedToolOutput = raw && typeof raw === 'object' && ('stdout' in raw || 'stderr' in raw) ? { ...raw, stdout: text, stderr: '' } : text;
+      if (context) out.additionalContext = context;
+      return { hookSpecificOutput: out };
     },
     context: (text) => ({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } }),
   },

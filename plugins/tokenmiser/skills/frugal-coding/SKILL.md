@@ -13,6 +13,14 @@ Every token you read stays in context and is re-sent (cheaply, when cached) on e
 - Don't re-read a file you already have in context; trust your earlier view plus your own edits.
 - For "how does this repo work" questions, delegate to the `scout` agent and work from its pointers.
 
+## Code index (tokenmiser)
+- Search hits may end with `[tokenmiser] enclosing definitions` listing `file: L72 in Class.method (L41-85)`. Read exactly that range; it is the whole definition.
+- A blocked whole-file read comes with the file's outline (symbols with line ranges). Pick the range from it instead of reading everything.
+- When enabled (`"index": true`), `.tokenmiser/tm sym <name>` gives a definition's file and line range (with its class), `.tokenmiser/tm outline <file>` lists a file's symbols, `.tokenmiser/tm refs <name>` lists usages per file, and `.tokenmiser/tm map [dir]` gives a ranked repo overview.
+
+## Data files
+- Never read a big CSV/JSON/Parquet file whole. With DuckDB installed: `duckdb -c "DESCRIBE SELECT * FROM 'f.csv'"`, `duckdb -c "SUMMARIZE SELECT * FROM 'f.csv'"`, or a filtered `SELECT … LIMIT 20`. Without it: `head -n 5`, `wc -l`, `jq 'keys'`.
+
 ## Shell
 - One batched command beats five small ones: `npm test 2>&1 | tail -n 60`.
 - Use quiet flags: `npm ci --silent`, `pip install -q`, `cargo build -q`, `git --no-pager log --oneline -n 20`, `pytest -q`, `go test ./... 2>&1 | grep -v '^ok'`.

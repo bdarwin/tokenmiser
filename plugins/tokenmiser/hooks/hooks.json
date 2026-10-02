@@ -7,7 +7,7 @@
       { "matcher": "Read|Bash", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook pre-tool --agent claude || true", "timeout": 10 }] }
     ],
     "PostToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent claude || true", "timeout": 10 }] }
+      { "matcher": "Bash|Grep", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent claude || true", "timeout": 10 }] }
     ]
   }
 }
