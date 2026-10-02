@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const VERSION = 3;
+const VERSION = 4;
 const MAX_FILE_BYTES = 1_000_000;
 const SKIP_DIRS = /(^|\/)(node_modules|\.git|dist|build|out|target|vendor|coverage|\.next|\.venv|venv|__pycache__|\.tokenmiser)\//;
 const SKIP_FILES = /\.(min\.(js|css)|map|lock|snap)$|(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$/;
@@ -107,6 +107,27 @@ export function extractSymbols(text, lang) {
         break;
       }
     }
+    // Python blocks end at the first line that dedents to the definition's own level
+    // (skipping the signature's continuation lines, blank lines and comments).
+    if (lang === 'py') {
+      let body = syms[k].line; // 0-based index of the line after the def line
+      let depth = 0;
+      for (let j = syms[k].line - 1; j < end; j++) {
+        depth += (lines[j].match(/[([{]/g) ?? []).length - (lines[j].match(/[)\]}]/g) ?? []).length;
+        if (depth <= 0) {
+          body = j + 1;
+          break;
+        }
+      }
+      for (let j = body; j < end; j++) {
+        const l = lines[j];
+        if (!l.trim() || /^\s*#/.test(l)) continue;
+        if (l.match(/^\s*/)[0].replace(/\t/g, '    ').length <= syms[k].indent) {
+          end = j;
+          break;
+        }
+      }
+    }
     // Trailing blank lines and the next symbol's doc comment don't belong to this one.
     // Also drop the enclosing scope's closing lines (`}`, `end`), which sit at a shallower indent.
     const indentOf = (l) => l.match(/^\s*/)[0].replace(/\t/g, '    ').length;
@@ -148,7 +169,11 @@ export function repoRoot(cwd) {
   try {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
-    return path.resolve(cwd);
+    try {
+      return fs.realpathSync(cwd);
+    } catch {
+      return path.resolve(cwd);
+    }
   }
 }
 
@@ -283,7 +308,11 @@ export function formatSymbols({ total, hits }, query) {
 }
 
 export function outline(index, file, opts) {
-  const rel = path.relative(index.root, path.resolve(file)).replace(/\\/g, '/');
+  let abs = path.resolve(file);
+  try {
+    abs = fs.realpathSync(abs); // index.root is a real path (see repoRoot)
+  } catch {}
+  const rel = path.relative(index.root, abs).replace(/\\/g, '/');
   const f = index.files[rel] ?? index.files[file];
   if (f) return formatOutline(rel, f.lines, f.symbols.map(sym), opts);
   return outlineFile(path.resolve(file), rel, opts); // not indexed (new, ignored, too big): parse directly

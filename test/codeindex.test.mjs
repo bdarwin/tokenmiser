@@ -180,3 +180,25 @@ test('search enrichment understands Copilot rg grouped output', async () => {
   assert.match(note, /src\/money\.ts: L2 in money \(L1-3\)/);
   assert.match(note, /src\/cart\.ts: L3,L4 in Cart\.checkout \(L3-5\)/);
 });
+
+test('Copilot read_file / grep_search tool shapes are supported', async () => {
+  const { snapRead } = await import('../plugins/tokenmiser/scripts/lib/snap.mjs');
+  const { enrichSearch } = await import('../plugins/tokenmiser/scripts/lib/enrich.mjs');
+  const { root } = makeRepo();
+  const big = path.join(root, 'src/big.py');
+  fs.writeFileSync(big, ['def long_one():', ...Array.from({ length: 30 }, (_, i) => `    step_${i}()`), ''].join('\n') + 'x = 1\n'.repeat(4000));
+  const s = snapRead({ tool: 'read_file', cwd: root, args: { filePath: big, startLine: 1, endLine: 10 } }, { snapMaxLines: 150 });
+  assert.equal(s.args.endLine, 31);
+  assert.ok(inspect({ tool: 'read_file', cwd: root, args: { filePath: big } }, DEFAULTS), 'whole-file read_file is guarded');
+  assert.equal(inspect({ tool: 'read_file', cwd: root, args: { filePath: big, startLine: 1, endLine: 40 } }, DEFAULTS), null);
+  const out = `2 matches\n\`\`\`txt\n<match path="${path.join(root, 'src/cart.ts')}" line=4>\n    return money(1);\n</match>\n\`\`\``;
+  assert.match(enrichSearch(out, { cwd: root }), /src\/cart\.ts: L4 in Cart\.checkout \(L3-5\)/);
+});
+
+test('search enrichment locates hits that came back without line numbers', async () => {
+  const { enrichSearch } = await import('../plugins/tokenmiser/scripts/lib/enrich.mjs');
+  const { root } = makeRepo();
+  const out = `${path.join(root, 'src/money.ts')}:export function money(n: number) {  [×3]\n`;
+  assert.match(enrichSearch(out, { cwd: root }), /src\/money\.ts: L1 in money \(L1-3\)/);
+  assert.match(enrichSearch('src/cart.ts:  checkout() {', { cwd: root }), /src\/cart\.ts: L3 in Cart\.checkout \(L3-5\)/);
+});

@@ -9,7 +9,7 @@
 //   COPILOT_PROVIDER_API_KEY=sk-ant-... COPILOT_MODEL=claude-haiku-4-5 node bench/copilot-ab.mjs /tmp/flask
 //
 // Runs with --allow-all-tools --deny-tool write: point it at a throwaway clone.
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,13 +24,18 @@ const out = opt('out', new URL('./copilot-results.json', import.meta.url).pathna
 const bin = opt('copilot', 'copilot');
 const plugin = new URL('../plugins/tokenmiser', import.meta.url).pathname;
 const tasks = JSON.parse(fs.readFileSync(path.resolve(opt('tasks', new URL('./tasks-flask.json', import.meta.url).pathname)), 'utf8'));
-// "none" also sets TOKENMISER_DISABLE in case tokenmiser is installed globally.
+// If tokenmiser is already installed in Copilot, use that copy (loading it twice would
+// run every hook twice); "none" then switches it off with TOKENMISER_DISABLE.
+let installed = false;
+try {
+  installed = /tokenmiser/.test(execFileSync(bin, ['plugin', 'list'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
+} catch {}
 const SETUPS = {
   none: { args: [], env: { TOKENMISER_DISABLE: '1' } },
-  plugin: { args: ['--plugin-dir', plugin], env: {} },
+  plugin: { args: installed ? [] : ['--plugin-dir', plugin], env: {} },
 };
 
-// "↑ 1.2m (980k cached) • ↓ 3.4k" -> numbers
+// "Tokens ↑ 96.2k (61k read, 17.4k written) • ↓ 1.2k (300 reasoning)" and "AI Credits 2.22 (6s)" -> numbers
 function parseTokens(text) {
   const num = (s) => {
     if (!s) return 0;
@@ -38,12 +43,14 @@ function parseTokens(text) {
     return m ? Math.round(parseFloat(m[1]) * ({ k: 1e3, m: 1e6 }[m[2].toLowerCase()] ?? 1)) : 0;
   };
   const line = text.split('\n').find((l) => /^\s*Tokens\b/.test(l)) ?? '';
+  const up = line.split('•')[0] ?? '';
   return {
-    input: num(line.match(/↑\s*([\d.,]+\s*[kKmM]?)/)?.[1]),
-    cached: num(line.match(/\(([\d.,]+\s*[kKmM]?)\s*cached/i)?.[1]),
+    input: num(up.match(/↑\s*([\d.,]+\s*[kKmM]?)/)?.[1]),
+    cached: num(up.match(/([\d.,]+\s*[kKmM]?)\s*(?:read|cached)/i)?.[1]),
+    written: num(up.match(/([\d.,]+\s*[kKmM]?)\s*written/i)?.[1]),
     output: num(line.match(/↓\s*([\d.,]+\s*[kKmM]?)/)?.[1]),
-    credits: text.match(/([\d.]+)\s*AI credits?/i)?.[1] ?? null,
-    raw: line.trim(),
+    credits: parseFloat(text.match(/^\s*AI Credits\s+([\d.]+)/im)?.[1] ?? 'NaN'),
+    raw: line.trim().replace(/\s+/g, ' '),
   };
 }
 
@@ -65,15 +72,24 @@ function run(task, setup, rep) {
       } catch {}
       const answer = md.split(/^### Copilot\s*$/m).pop()?.split(/^---\s*$/m)[0]?.trim() ?? '';
       const tok = parseTokens(so);
+      // What tokenmiser did in this run, from its own stats log.
+      const tm = {};
+      try {
+        for (const l of fs.readFileSync(path.join(tmp, 'stats.jsonl'), 'utf8').split('\n').filter(Boolean)) {
+          const k = JSON.parse(l).kind;
+          tm[k] = (tm[k] ?? 0) + 1;
+        }
+      } catch {}
       const row = {
         task: task.id, setup, rep, exit: code,
         ok: [].concat(task.expect).some((e) => answer.includes(e)),
         toolCalls: (md.match(/^### `/gm) ?? []).length,
         modelCalls: (md.match(/^### Copilot\s*$/gm) ?? []).length,
         ...tok,
+        tm,
         answer: answer.slice(0, 600),
       };
-      process.stderr.write(`${setup.padEnd(7)} ${task.id.padEnd(22)} rep${rep} tools=${row.toolCalls} ${tok.raw || '(no token line)'} ${row.ok ? 'ok' : 'MISS'}\n`);
+      process.stderr.write(`${setup.padEnd(7)} ${task.id.padEnd(22)} rep${rep} tools=${row.toolCalls} credits=${tok.credits || '-'} ${tok.raw || '(no token line)'} tm=${JSON.stringify(tm)} ${row.ok ? 'ok' : 'MISS'}\n`);
       resolve(row);
     });
   });
@@ -88,12 +104,15 @@ await Promise.all(Array.from({ length: jobs }, async () => {
 fs.writeFileSync(out, JSON.stringify(rows, null, 2));
 
 const avg = (xs) => xs.reduce((a, b) => a + b, 0) / Math.max(xs.length, 1);
-const base = avg(rows.filter((x) => x.setup === 'none').map((x) => x.input));
-console.log(`\n${tasks.length} tasks × ${reps} reps, repo ${path.basename(repo)}${model ? `, model ${model}` : ''}\n`);
-console.log('setup    correct  avg tool calls  avg input tok  avg cached  avg output tok  input vs none');
+const of = (s, k) => avg(rows.filter((x) => x.setup === s).map((x) => x[k] || 0));
+const hasCredits = rows.some((x) => x.credits > 0);
+const pct = (a, b) => (b ? `${((a / b - 1) * 100).toFixed(0)}%` : '');
+console.log(`\n${tasks.length} tasks × ${reps} reps, repo ${path.basename(repo)}${model ? `, model ${model}` : ''}${installed ? ' (using the installed plugin)' : ''}\n`);
+console.log(`setup    correct  tool calls  input tok  cache-read  cache-written  output tok${hasCredits ? '  AI credits' : ''}`);
 for (const s of Object.keys(SETUPS)) {
   const r = rows.filter((x) => x.setup === s);
-  const inp = avg(r.map((x) => x.input));
-  console.log(`${s.padEnd(8)} ${`${r.filter((x) => x.ok).length}/${r.length}`.padEnd(8)} ${avg(r.map((x) => x.toolCalls)).toFixed(1).padEnd(15)} ${Math.round(inp).toLocaleString().padEnd(14)} ${Math.round(avg(r.map((x) => x.cached))).toLocaleString().padEnd(11)} ${Math.round(avg(r.map((x) => x.output))).toLocaleString().padEnd(15)} ${s === 'none' ? '' : `${((inp / base - 1) * 100).toFixed(0)}%`}`);
+  const n = (k) => Math.round(of(s, k)).toLocaleString();
+  console.log(`${s.padEnd(8)} ${`${r.filter((x) => x.ok).length}/${r.length}`.padEnd(8)} ${of(s, 'toolCalls').toFixed(1).padEnd(11)} ${n('input').padEnd(10)} ${n('cached').padEnd(11)} ${n('written').padEnd(14)} ${n('output').padEnd(10)}${hasCredits ? `  ${of(s, 'credits').toFixed(2)}` : ''}`);
 }
+console.log(`\nplugin vs none: input ${pct(of('plugin', 'input'), of('none', 'input'))}, tool calls ${pct(of('plugin', 'toolCalls'), of('none', 'toolCalls'))}${hasCredits ? `, AI credits ${pct(of('plugin', 'credits'), of('none', 'credits'))}` : ''}`);
 console.log(`\nRaw rows: ${out}`);

@@ -66,10 +66,11 @@ export function inspect(call, cfg) {
   const { tool, args, cwd } = call;
   const t = tool.toLowerCase();
 
-  // Whole-file reads: Copilot `view {path, view_range}`, Claude `Read {file_path, offset, limit}`
+  // Whole-file reads: Copilot `view {path, view_range}` / `read_file {filePath, startLine, endLine}`,
+  // Claude `Read {file_path, offset, limit}`
   if (t === 'view' || t === 'read' || t === 'read_file') {
     const file = args.path ?? args.file_path ?? args.filePath;
-    const ranged = args.view_range ?? args.viewRange ?? args.limit ?? args.offset;
+    const ranged = args.view_range ?? args.viewRange ?? args.limit ?? args.offset ?? args.startLine ?? args.endLine;
     if (!file || ranged) return null;
     const hit = checkFile(file, cwd, cfg);
     return hit && { key: `read:${file}`, ...hit };

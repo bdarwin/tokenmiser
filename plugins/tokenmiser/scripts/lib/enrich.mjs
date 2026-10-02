@@ -52,10 +52,27 @@ export function enrichSearch(text, { cwd = process.cwd(), command = '' } = {}) {
     hits.get(file).add(line);
   };
   let group = null;
+  let located = 0;
+  const cache = new Map();
+  const linesOf = (abs) => {
+    if (!cache.has(abs)) {
+      let v = null;
+      try {
+        if (fs.statSync(abs).size <= 1_000_000) v = fs.readFileSync(abs, 'utf8').split(/\r?\n/);
+      } catch {}
+      cache.set(abs, v);
+    }
+    return cache.get(abs);
+  };
   for (const raw of text.split('\n')) {
     let m = raw.match(/^(\S.*?) \(\d+ match(?:\(es\)|es)?\):\s*$/);
     if (m) {
       group = resolve(m[1]);
+      continue;
+    }
+    m = raw.match(/^<match path="([^"]+)" line=(\d+)>/); // Copilot grep_search
+    if (m) {
+      add(path.relative(cwd, m[1]).startsWith('..') ? m[1] : path.relative(cwd, m[1]), +m[2]);
       continue;
     }
     m = raw.match(/^(?:\.\/)?([^\s:][^:\n]*?\.[A-Za-z0-9]+)[:-](\d+)[:-]/);
@@ -64,7 +81,27 @@ export function enrichSearch(text, { cwd = process.cwd(), command = '' } = {}) {
       continue;
     }
     m = raw.match(/^\s*(\d+)[:-]/);
-    if (m && (group || lone)) add(group ?? lone, +m[1]);
+    if (m && (group || lone)) {
+      add(group ?? lone, +m[1]);
+      continue;
+    }
+    // "path:matched text" with no line number (Copilot's grep tool): find where that
+    // text sits in the file, so the agent doesn't spend calls hunting for the line.
+    m = raw.match(/^(?:\.\/)?([^\s:][^:\n]*?\.[A-Za-z0-9]+):\s*(.*?\S)(?:\s+\[×\d+\])?\s*$/);
+    if (m && located < 12) {
+      const file = resolve(path.isAbsolute(m[1]) && !path.relative(cwd, m[1]).startsWith('..') ? path.relative(cwd, m[1]) : m[1]);
+      const want = m[2].trim();
+      const src = linesOf(path.resolve(cwd, file));
+      if (!src || want.length < 4) continue;
+      let found = 0;
+      for (let i = 0; i < src.length && found < 3; i++) {
+        if (src[i].trim() === want) {
+          add(file, i + 1);
+          found++;
+          located++;
+        }
+      }
+    }
   }
   const out = [];
   for (const [file, lines] of hits) {

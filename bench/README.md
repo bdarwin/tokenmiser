@@ -16,6 +16,19 @@ COPILOT_PROVIDER_TYPE=anthropic COPILOT_PROVIDER_BASE_URL=https://api.anthropic.
 
 The replay needs Flask's test environment (`python3 -m venv .venv && .venv/bin/pip install -e . pytest` inside the clone).
 
+## Copilot CLI live agent (2026-10-02, Copilot CLI 1.0.91, macOS, `claude-haiku-4.5`, Copilot subscription)
+
+`node bench/copilot-ab.mjs /tmp/flask --reps 2 --jobs 2 --model claude-haiku-4.5`
+
+| setup | correct | tool calls | input tok | cache-read | cache-written | output tok | AI credits |
+|---|---|---|---|---|---|---|---|
+| none | 8/10 | 9.2 | 106,830 | 90,500 | 9,310 | 1,268 | 2.36 |
+| tokenmiser 0.2.2 | 10/10 | 9.5 | 87,220 | 71,710 | 8,860 | 1,059 | 2.03 |
+
+Plugin vs none: input −18%, AI credits −14%. Small sample (10 runs per setup; single runs range 1.5–3.9 credits).
+
+With 0.2.1 the same benchmark showed no difference (2.42 credits for both setups over 15 runs each): the live agent and its `explore` sub-agent used `grep_search`, `file_search` and `read_file`, which that version's hooks didn't match. The harness now logs what tokenmiser did in every run (`tm={...}`), which is how this was caught.
+
 ## Copilot CLI replay (2026-10-02, Copilot CLI 1.0.90)
 
 | Step | Without tokenmiser | With tokenmiser |

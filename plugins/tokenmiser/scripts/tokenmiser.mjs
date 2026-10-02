@@ -90,7 +90,7 @@ function runHook(event) {
     if (call.resultText == null) return;
     const command = String(call.args.command ?? '');
     const isShell = /^(bash|powershell|shell)$/i.test(call.tool);
-    const isSearch = /^(grep|rg|glob)$/i.test(call.tool) || (isShell && /^\s*(rg|grep|git grep)\b/.test(command));
+    const isSearch = /^(grep|rg|glob|grep_search|file_search)$/i.test(call.tool) || (isShell && /^\s*(rg|grep|git grep)\b/.test(command));
     let text = null;
     let context = null;
 

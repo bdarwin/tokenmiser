@@ -17,7 +17,16 @@ export function ensureShim(root, cwd) {
     const body = `#!/bin/sh\nexec node "${ENTRY}" "$@"\n`;
     if (!fs.existsSync(sh) || fs.readFileSync(sh, 'utf8') !== body) fs.writeFileSync(sh, body, { mode: 0o755 });
     if (process.platform === 'win32') fs.writeFileSync(path.join(dir, 'tm.cmd'), `@node "${ENTRY}" %*\r\n`);
-    const rel = path.relative(cwd, sh).replace(/\\/g, '/');
+    // Compare real paths: git reports the resolved root, while cwd may go through a
+    // symlink (macOS: /var -> /private/var, /tmp -> /private/tmp).
+    const real = (d) => {
+      try {
+        return fs.realpathSync(d);
+      } catch {
+        return d;
+      }
+    };
+    const rel = path.relative(real(cwd), real(sh)).replace(/\\/g, '/');
     return rel.startsWith('..') || path.isAbsolute(rel) ? sh : rel.startsWith('.') ? rel : `./${rel}`;
   } catch {
     return null;

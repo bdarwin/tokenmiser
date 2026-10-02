@@ -17,7 +17,7 @@ export const DEFAULTS = {
   dataHints: true, // big CSV/JSON/Parquet reads get DuckDB (or head/jq) advice
   bigFileBytes: 16_000, // ~4k tokens: whole-file reads above this get a nudge first
   generatedFileBytes: 8_000, // lockfiles, minified files, sourcemaps
-  compressTools: '^(bash|powershell|read_bash|read_powershell|shell|grep|rg|glob|web_fetch|fetch|Bash)$',
+  compressTools: '^(bash|powershell|read_bash|read_powershell|shell|grep|rg|glob|grep_search|file_search|web_fetch|fetch|Bash)$',
   digestChars: 8000, // budget when digesting Copilot's >20 KB spilled outputs
   ...COMPRESS_DEFAULTS,
 };

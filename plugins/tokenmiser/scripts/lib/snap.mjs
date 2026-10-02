@@ -31,6 +31,12 @@ export function snapRead(call, cfg) {
     [start, end] = a.view_range.map(Number);
     if (end === -1) return null;
     make = (newEnd) => ({ ...a, view_range: [start, newEnd] });
+  } else if (t === 'read_file' && a.startLine && a.endLine) {
+    // Copilot read_file: inclusive startLine/endLine
+    file = a.filePath ?? a.path;
+    start = Number(a.startLine);
+    end = Number(a.endLine);
+    make = (newEnd) => ({ ...a, endLine: newEnd });
   } else return null;
   if (!file || !(end >= start)) return null;
 

@@ -12,7 +12,7 @@
     "preToolUse": [
       {
         "type": "command",
-        "matcher": "^(view|bash|powershell)$",
+        "matcher": "^(view|read_file|bash|powershell)$",
         "bash": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook pre-tool --agent copilot || true",
         "powershell": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook pre-tool --agent copilot; exit 0",
         "timeoutSec": 10
@@ -21,7 +21,7 @@
     "postToolUse": [
       {
         "type": "command",
-        "matcher": "^(bash|powershell|read_bash|read_powershell|grep|rg|glob|web_fetch)$",
+        "matcher": "^(bash|powershell|read_bash|read_powershell|grep|rg|glob|grep_search|file_search|web_fetch)$",
         "bash": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent copilot || true",
         "powershell": "node \"${PLUGIN_ROOT}/scripts/tokenmiser.mjs\" hook post-tool --agent copilot; exit 0",
         "timeoutSec": 10

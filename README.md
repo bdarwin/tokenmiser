@@ -10,6 +10,7 @@ tokenmiser is a plugin that sits between the agent and its tools. It shrinks wha
 
 | | Without tokenmiser | With tokenmiser |
 |---|---|---|
+| Copilot CLI, live agent on Flask ([benchmark](#copilot-cli-live-agent-benchmark)) | 2.36 AI credits per question, 8/10 correct | **2.03 (−14%)**, 10/10 correct |
 | Copilot CLI, scripted debug session ([replay](#copilot-cli-replay-real-cli-scripted-model)) | ~153k input tokens, 9 tool calls | **~114k (−25%)**, 6 tool calls |
 | Claude Code, live agent on Flask ([benchmark](#claude-code-live-agent-benchmark)) | $0.0333 per question | **$0.0291 (−13%)**, 29/30 correct (vs 28/30) |
 | Claude Code, live agent on Django | $0.0313 per question | **$0.0267 (−15%)**, 30/30 correct (vs 30/30) |
@@ -53,7 +54,7 @@ Copilot CLI (1.0.90) already does some of this. tokenmiser fills the gaps and st
 | `view` of a file over ~20 KB | Refused with a generic hint | Refused with the file's **outline** (definitions and line ranges), so the next read is exact |
 | `view` of a 16–20 KB file, or a lockfile/minified file over 8 KB | Read whole | Blocked once with the outline or a grep hint; an identical retry goes through |
 | A line-range read that cuts a function short | Returned as asked; the agent reads again | Extended to the end of the function (≤150 lines) |
-| Search hits | Raw matches | Plus the enclosing definition and its range: `L72 in BlueprintSetupState.__init__ (L41-85)` |
+| Search hits | Raw matches, sometimes without line numbers | Plus the line, the enclosing definition and its range: `L72 in BlueprintSetupState.__init__ (L41-85)` |
 | Big CSV / JSON / Parquet | Read or refused | Pointed at `duckdb -c "SUMMARIZE …"` (or `head`/`jq`) |
 | An explicit `cat`/`head`/`sed -n` of a file | Passed through | Passed through (it's a read; trimming would force a re-read) |
 | Exploration on a cheap model | Built-in `explore` agent | Same; the session prompt tells the agent to use it |
@@ -75,6 +76,17 @@ Copilot CLI (1.0.90) already does some of this. tokenmiser fills the gaps and st
 | **`tokenmiser` CLI** | – | `stats` shows what was saved, `compress` filters any pipe, `doctor` checks your setup and lists Copilot settings that save credits. |
 
 ## Benchmarks
+
+### Copilot CLI (live agent benchmark)
+
+A real Copilot subscription, Copilot CLI 1.0.91 on macOS, model `claude-haiku-4.5`, the five Flask questions, 10 runs per setup, usage as reported by Copilot itself:
+
+| Setup | Correct | Avg input tokens | Avg AI credits | vs none |
+|---|---|---|---|---|
+| none | 8/10 | 106,830 | 2.36 | |
+| tokenmiser 0.2.2 | 10/10 | 87,220 | 2.03 | **−18% input, −14% credits** |
+
+Ten runs per setup is a small sample, and single runs range from 1.5 to 3.9 credits, so read this as a direction, not a guarantee. An earlier round with 0.2.1 showed no saving at all, and the reason was instructive: with a real model, Copilot's agent and its built-in `explore` sub-agent mostly use tools named `grep_search`, `file_search` and `read_file`, which 0.2.1 didn't watch. 0.2.2 covers them.
 
 ### Copilot CLI replay (real CLI, scripted model)
 
@@ -127,6 +139,10 @@ node bench/copilot-ab.mjs /tmp/flask --reps 3
 ```
 
 BYOK runs the real Copilot agent (same tools, prompts and hooks) and bills your provider instead of Copilot credits, so token counts carry over and the credit price doesn't. The harnesses run tools without asking, so point them at a throwaway clone.
+
+## Status
+
+Early (0.2.x). Tested on Linux and macOS with Copilot CLI 1.0.90–1.0.91 and Claude Code 2.1. Windows is untested. Hooks fail open, so a Copilot update that changes tool names or output formats turns features off rather than breaking the agent; `tokenmiser stats` shows whether the hooks are doing anything.
 
 ## Install
 
