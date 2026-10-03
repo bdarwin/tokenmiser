@@ -21,7 +21,7 @@ const opt = (k, d) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1
 const repo = path.resolve(argv[0] ?? '.');
 const script = JSON.parse(fs.readFileSync(path.resolve(opt('script', fileURLToPath(new URL('./replay-flask.json', import.meta.url)))), 'utf8').replaceAll('{repo}', repo));
 const bin = opt('copilot', 'copilot');
-const plugin = fileURLToPath(new URL('../plugins/tokenmiser', import.meta.url));
+const plugin = path.resolve(opt('plugin', fileURLToPath(new URL('../plugins/tokenmiser', import.meta.url))));
 
 // Each setup's call sequence: every step, then that setup's follow-up calls for it.
 function plan(setup) {
